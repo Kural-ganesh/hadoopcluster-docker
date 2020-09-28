@@ -1,0 +1,30 @@
+FROM ubuntu
+RUN mkdir /data
+COPY jdk-8u261-linux-x64.tar.gz /data
+RUN tar -xvf /data/jdk-8u261-linux-x64.tar.gz \
+    && mkdir -p /usr/lib/jvm \
+    && mv ./jdk1.8.0_261 /usr/lib/jvm \
+    && update-alternatives --install "/usr/bin/java" "java" "/usr/lib/jvm/jdk1.8.0_261/bin/java" 1 \
+    && update-alternatives --install "/usr/bin/javac" "javac" "/usr/lib/jvm/jdk1.8.0_261/bin/javac" 1 \
+    && update-alternatives --install "/usr/bin/javaws" "javaws" "/usr/lib/jvm/jdk1.8.0_261/bin/javaws" 1 \
+    && chmod a+x /usr/bin/java \
+    && chmod a+x /usr/bin/javac \
+    && chmod a+x /usr/bin/javaws \
+    && echo "export JAVA_HOME=/usr/lib/jvm/jdk1.8.0_261" >> /etc/environment 
+
+WORKDIR /etc/apt/source.list.d
+RUN touch cloudera-repo.list \
+    && echo "deb [arch=amd64] https://archive.cloudera.com/cdh5/ubuntu/xenial/amd64/cdh xenial-cdh5 contrib" >> cloudera-repo.list \
+    && echo "deb-src https://archive.cloudera.com/cdh5/ubuntu/xenial/amd64/cdh xenial-cdh5 contrib" >> cloudera-repo.list 
+
+
+WORKDIR /etc/apt/preferences.d
+RUN touch cloudera.pref \
+    && echo "Package: * \nPin: release o=Cloudera, l=Cloudera \nPin-Priority: 501" >> cloudera.pref 
+
+RUN apt-get update \
+    && apt-get install hadoop-yarn-resourcemanager \
+    && apt-get install hadoop-hdfs-namenode \
+    && apt-get install hadoop-mapreduce-historyserver hadoop-yarn-proxyserver \
+    && apt-get install hadoop-client
+
